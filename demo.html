@@ -114,7 +114,6 @@
 					refreshCode ( htmlmap,elname );
 				}
 			});
-			console.log( elname+'_areas: ', window[elname+'_areas'] );
 			for(var i=0; i<window[elname+'_areas'].length; i++){
 				$("#"+elname+"_layers .sortable").append($("<li>").append($("<span>",{"class":"icon-resize-vertical"})).append($("<input>",{"type":"text","data-coords":window[elname+'_areas'][i].coords.join()}).val(window[elname+'_areas'][i].href)));
 			}
@@ -143,7 +142,7 @@
 					areas: demo2_areas,
 					activeColor: '#ff9911',
 					fillOpacity: '0.6',
-					lineWidth: 8,
+					lineWidth: 4,
         			onMove: function(area){
         			},
         			onUpdateArea: function(area){

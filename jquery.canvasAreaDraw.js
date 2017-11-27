@@ -232,16 +232,12 @@
 					return result;
 				},
 				getRgbStrExpr = function(color, opacity) {
-					if( color.indexOf(',')>0 ){
-						var str = opacity ? 'rgba('+color+','+opacity+')' : 'rgb('+color+')';
-						console.log( "::getRgbStrExpr:: ", str );
-						return str;
-					} else {
-						var str = ( opacity ? 'rgba(%s, %o)'.replace('%o', opacity) : 'rgb(%s)' )
+					if( color.indexOf(',')>0 )
+						var rgbstr =( opacity ? 'rgba('+color+','+opacity+')' : 'rgb('+color+')' );
+					else 
+						var rgbstr =( opacity ? 'rgba(%s,'+opacity+')' : 'rgb(%s)' )
 								  .replace('%s', convertColorHex2Dec(color).join(','));
-						console.log( "::getRgbStrExpr:: ", str );
-						return str;
-					}
+					return rgbstr;
 				};
 
 			// nothing to draw, don't redraw :)
@@ -262,8 +258,7 @@
 				fillCoordRgba = fillPolygonRgba;
 			}
 
-			this.__ctx.lineWidth = 1;
-			this.options.areas[area].color = this.options.lineWidth;
+			this.__ctx.lineWidth = this.options.lineWidth;
 
 			//Draw polygon
 			this.__ctx.beginPath();
