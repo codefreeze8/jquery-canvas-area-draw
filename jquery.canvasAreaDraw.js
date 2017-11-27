@@ -8,6 +8,10 @@
 			image: null,
 			mobile: false,
 			imageUrl: "",
+			activeColor: "255,20,20",
+			inactiveColor: "#323232",
+			fillOpacity: "0.3",
+			lineWidth: 2,			
 			mode: "",
 			areas: [{
 				href:"",
@@ -17,9 +21,6 @@
 			onUpdateArea: function(p){},
 			onSelect: function(p){}
 		},
-
-		__color: '#FF0000',
-		__inactiveColor: '#323232',
 
 		_applyHandler: function(method) {
 			var context = this.isCSMode() ? this._CSMode : this,
@@ -231,34 +232,38 @@
 					return result;
 				},
 				getRgbStrExpr = function(color, opacity) {
-					var str = opacity ? 'rgba(%s, %o)'.replace('%o', opacity) : 'rgb(%s)';
-					return str.replace('%s', convertColorHex2Dec(color).join(','));
-				},
-				areaObj = this.options.areas[area],
-				isActiveArea = area == this.__activeArea,
-				color = (areaObj ? areaObj.color : null) || this.getColor(),
-				colorStr = getRgbStrExpr(color),
-				inactiveColorStr = getRgbStrExpr(this.__inactiveColor),
-				inactiveColorTranspStr = getRgbStrExpr(this.__inactiveColor, 0.3);
+					if( color.indexOf(',')>0 ){
+						var str = opacity ? 'rgba('+color+','+opacity+')' : 'rgb('+color+')';
+						console.log( "::getRgbStrExpr:: ", str );
+						return str;
+					} else {
+						var str = ( opacity ? 'rgba(%s, %o)'.replace('%o', opacity) : 'rgb(%s)' )
+								  .replace('%s', convertColorHex2Dec(color).join(','));
+						console.log( "::getRgbStrExpr:: ", str );
+						return str;
+					}
+				};
 
-			if(isActiveArea){
-				strokePolygonRgb = colorStr;
-				fillPolygonRgba = getRgbStrExpr(color, 0.3);
-				strokeCoordRgb = colorStr;
-				fillCoordRgb = getRgbStrExpr("#ffffff");
-			}else{
-				strokePolygonRgb = inactiveColorStr;
-				fillPolygonRgba = inactiveColorTranspStr;
-				strokeCoordRgb = inactiveColorStr;
-				fillCoordRgba = inactiveColorTranspStr;
-			}
-
-			if (!this.__isArea(area)) {
+			// nothing to draw, don't redraw :)
+			if (this.options.areas[area].coords.length < 2) {
 				return false;
 			}
 
+			if(area == this.__activeArea){
+				strokePolygonRgb = getRgbStrExpr(this.options.activeColor);
+				fillPolygonRgba = getRgbStrExpr(this.options.activeColor,this.options.fillOpacity);
+				strokeCoordRgb = strokePolygonRgb;
+				fillCoordRgba = getRgbStrExpr("#ffffff");
+				
+			}else{
+				strokePolygonRgb = getRgbStrExpr(this.options.inactiveColor);
+				fillPolygonRgba = getRgbStrExpr(this.options.inactiveColor,this.options.fillOpacity);
+				strokeCoordRgb = strokePolygonRgb;
+				fillCoordRgba = fillPolygonRgba;
+			}
+
 			this.__ctx.lineWidth = 1;
-			this.options.areas[area].color = color;
+			this.options.areas[area].color = this.options.lineWidth;
 
 			//Draw polygon
 			this.__ctx.beginPath();
@@ -274,12 +279,13 @@
 			this.__ctx.fillStyle = fillPolygonRgba;
 			this.__ctx.fill();
 
-			//Draw coords
+			//Draw coords -- min rect size is 4 pixels
+			var r = Math.max( 4, this.options.lineWidth );
 			this.__ctx.strokeStyle = strokeCoordRgb;
 			this.__ctx.fillStyle = fillCoordRgb;
 			for (var i = 0; i < this.options.areas[area].coords.length; i+=2) {
-				this.__ctx.strokeRect(this.options.areas[area].coords[i]-2, this.options.areas[area].coords[i+1]-2, 4, 4);
-				this.__ctx.fillRect(this.options.areas[area].coords[i]-2, this.options.areas[area].coords[i+1]-2, 4, 4);
+				this.__ctx.strokeRect(this.options.areas[area].coords[i]-r, this.options.areas[area].coords[i+1]-r, 2*r, 2*r);
+				this.__ctx.fillRect(this.options.areas[area].coords[i]-r, this.options.areas[area].coords[i+1]-r, 2*r, 2*r);
 			}
 
 		},
@@ -303,14 +309,6 @@
 
 		getMode: function() {
 			return this.options.mode;
-		},
-
-		getColor: function() {
-			return this.__color;
-		},
-
-		setColor: function(color) {
-			this.__color = color;
 		},
 
 		isCSMode: function() {
