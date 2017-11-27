@@ -185,7 +185,7 @@
 		},
 
 		__mouseup: function() {
-			this.__stopdrag(e);
+			this.__stopdrag();
 		},
 
 		__draw: function(){
