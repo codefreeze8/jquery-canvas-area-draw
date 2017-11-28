@@ -7,6 +7,9 @@ to create a polygon.
 
 Flexible API allows you to create multiple areas, manipulate them in several ways, get notified on changes, for any purpose. Please check the demo.html page to view an example of the usage of the API.
 
+DEMO:
+http://repos.codehot.io/jquery-canvas-area-draw/
+
 ### EXAMPLE
 
 Include the javascript file in your page after jQuery and use the following jQuery call:
