@@ -1,4 +1,4 @@
-jQuery ImageMap Area Canvas Editor
+jImageMap - jQuery ImageMap Area Canvas Editor
 ======================
 
 jQuery plugin to create imagemap area polygon coordinates. 
@@ -46,6 +46,16 @@ $("#elem").htmlimagemap({
     href: "http://www.example2.com",
     coords: [176,229,155,221,132,196]
   }], 
+  label: "Demo2",
+  labelFont: "14px Arial",
+  labelColor: "#ffffff",
+	activeColor: '#ff9911',
+  inactiveColor: "#323232",
+	fillOpacity: "0.3",
+	lineWidth: 2,
+  handleColor: "#cccccc",
+  mobile: false,
+
   //OPTIONAL EVENT HANDLER
   onMove: function(area){}, 
   //OPTIONAL EVENT HANDLER
