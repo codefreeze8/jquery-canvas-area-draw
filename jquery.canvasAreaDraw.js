@@ -1,3 +1,16 @@
+/**
+ * @license jImageMap v1.0.0
+ * Nov 2017 Updates Filipe Laborde / codefreeze8@gmail.com
+ * Added labels; dot-merging (if 2 dots side-by-side); color,line adjusting
+ * Credits - Original work
+ * https://github.com/fahrenheit-marketing/jquery-canvas-area-draw
+ * Enhancements: Touch-capabilities
+ * https://github.com/dmitryt/jquery-canvas-area-draw
+ * Enhancements: Multi-map capabilties + 'widgetization'
+ * https://github.com/neshte/jquery-canvas-area-draw
+ * 
+ * Released under the MIT license
+ */
 (function( $ ){
 
 	$.widget("custom.htmlimagemap", {
@@ -8,10 +21,14 @@
 			image: null,
 			mobile: false,
 			imageUrl: "",
+			label: "",
+			labelFont: "14px Arial",
+			labelColor: "#ffffff",
 			activeColor: "255,20,20",
 			inactiveColor: "#323232",
 			fillOpacity: "0.3",
-			lineWidth: 2,			
+			lineWidth: 2,
+			handleColor: "#cccccc",
 			mode: "",
 			areas: [{
 				href:"",
@@ -33,14 +50,14 @@
 		//Widget implementation
 		_create: function(){
 
-			var self = this,
-				cb;
+			var self = this, cb;
 			this.__activeArea = 0;
 			this.__activeCoord = undefined;
 			this.__settings = undefined;
 			this.__$canvas = undefined;
 			this.__ctx = undefined;
 			this.__image = this.options.image ? $(this.options.image)[0] : new Image();
+			this.__boundaryArea = [0,0,0,0];
 
 			this.__$canvas = this._initCanvas();
 			this.__ctx = this.__$canvas[0].getContext('2d');
@@ -74,10 +91,8 @@
 
 		_initCanvas: function() {
 			var canvas = $('<canvas>');
-			if (!canvas[0].getContext && typeof G_vmlCanvasManager !== 'undefined') {
-				//IE Support
-				canvas[0] = G_vmlCanvasManager.initElement(canvas[0]);
-			}
+			if (!canvas[0].getContext && typeof G_vmlCanvasManager !== 'undefined') 
+				canvas[0] = G_vmlCanvasManager.initElement(canvas[0]); //IE Support
 			return canvas;
 		},
 
@@ -107,26 +122,36 @@
 
 		__stopdrag: function(){
 			$(this.element).off('mousemove');
+			// check if point dragged over another point
+			var coordSet = this.options.areas[this.__activeArea].coords;
+			var coord = findClosestCoord(coordSet, coordSet[this.__activeCoord], coordSet[this.__activeCoord+1], this.__activeCoord);
+			// if the two points are beside each other, and point has been moved to overlap other point,
+			// we consider this indication to collapse the moved point.
+			var distance = Math.abs(coord-this.__activeCoord);
+			if( coord !==false && (distance==2 || distance==(this.options.areas[this.__activeArea].coords.length-2) ) ){
+				this.options.areas[this.__activeArea].coords.splice(coord, 2);
+				this.options.onUpdateArea(this.options.areas[this.__activeArea]);
+				this.__redraw();
+			}
+			
 			this.__activeCoord = null;
-			this.options.onUpdateArea(this.options.areas[this.__activeArea]);
 		},
 
 		__rightclick: function(e){
 			e.preventDefault();
 			e.offsetX = (e.pageX - $(this.__$canvas[0]).offset().left);
 			e.offsetY = (e.pageY - $(this.__$canvas[0]).offset().top);
-			var x = e.offsetX, y = e.offsetY;
+			var x = e.offsetX, y = e.offsetY;			
 			if($.browser.msie && parseFloat($.browser.version)<8){
 				y = e.offsetY-$('body').scrollTop();
 			}
-			for (var i = 0; i < this.options.areas[this.__activeArea].coords.length; i+=2) {
-				dis = Math.sqrt(Math.pow(x - this.options.areas[this.__activeArea].coords[i], 2) + Math.pow(y - this.options.areas[this.__activeArea].coords[i+1], 2));
-				if ( dis < 6 ) {
-					this.options.areas[this.__activeArea].coords.splice(i, 2);
-					this.options.onUpdateArea(this.options.areas[this.__activeArea]);
-					this.__redraw();
-					return false;
-				}
+
+			var coord = findClosestCoord(this.options.areas[this.__activeArea].coords,x,y);
+			// only if right close was very close to a handle do we remove it.
+			if( coord !== false ){
+				this.options.areas[this.__activeArea].coords.splice(coord, 2);
+				this.options.onUpdateArea(this.options.areas[this.__activeArea]);
+				this.__redraw();
 			}
 			return false;
 		},
@@ -147,15 +172,14 @@
 				y = e.offsetY-$('body').scrollTop();
 			}
 			//Move existing coord
-			for (var i = 0; i < this.options.areas[this.__activeArea].coords.length; i+=2) {
-				dis = Math.sqrt(Math.pow(x - this.options.areas[this.__activeArea].coords[i], 2) + Math.pow(y - this.options.areas[this.__activeArea].coords[i+1], 2));
-				if ( dis < 6 ) {
-					this.__activeCoord = i;
-					$(this.element).on('mousemove', function(e){
-						self.__move(e);
-					});
-					return false;
-				}
+			var coord = findClosestCoord(this.options.areas[this.__activeArea].coords,x,y);
+			// only if right close was very close to a handle do we remove it.
+			if( coord !== false ){
+				this.__activeCoord = coord;
+				$(this.element).on('mousemove', function(e){
+					self.__move(e);
+				});
+				return false;
 			}
 
 			//Insert new coord if close to line
@@ -249,13 +273,13 @@
 				strokePolygonRgb = getRgbStrExpr(this.options.activeColor);
 				fillPolygonRgba = getRgbStrExpr(this.options.activeColor,this.options.fillOpacity);
 				strokeCoordRgb = strokePolygonRgb;
-				fillCoordRgba = getRgbStrExpr("#ffffff");
+				fillCoordRgb = getRgbStrExpr(this.options.handleColor);
 				
 			}else{
 				strokePolygonRgb = getRgbStrExpr(this.options.inactiveColor);
 				fillPolygonRgba = getRgbStrExpr(this.options.inactiveColor,this.options.fillOpacity);
 				strokeCoordRgb = strokePolygonRgb;
-				fillCoordRgba = fillPolygonRgba;
+				fillCoordRgb = fillPolygonRgba;
 			}
 
 			this.__ctx.lineWidth = this.options.lineWidth;
@@ -263,9 +287,16 @@
 			//Draw polygon
 			this.__ctx.beginPath();
 			this.__ctx.moveTo(this.options.areas[area].coords[0], this.options.areas[area].coords[1]);
+			this.__boundaryArea[0] = this.__boundaryArea[2] = this.options.areas[area].coords[0];
+			this.__boundaryArea[1] = this.__boundaryArea[3] = this.options.areas[area].coords[1];
 			for (var i = 0; i < this.options.areas[area].coords.length; i+=2) {
 				if (this.options.areas[area].coords.length > 2 && i > 1) {
 					this.__ctx.lineTo(this.options.areas[area].coords[i], this.options.areas[area].coords[i+1]);
+					// track the min/max boundaries
+					this.__boundaryArea[0] = Math.min( this.__boundaryArea[0], this.options.areas[area].coords[i] );
+					this.__boundaryArea[1] = Math.min( this.__boundaryArea[1], this.options.areas[area].coords[i+1] );
+					this.__boundaryArea[2] = Math.max( this.__boundaryArea[2], this.options.areas[area].coords[i] );
+					this.__boundaryArea[3] = Math.max( this.__boundaryArea[3], this.options.areas[area].coords[i+1] );
 				}
 			}
 			this.__ctx.closePath();
@@ -275,7 +306,7 @@
 			this.__ctx.fill();
 
 			//Draw coords -- min rect size is 4 pixels
-			var r = Math.max( 4, this.options.lineWidth );
+			var r = Math.max( 3, this.options.lineWidth );
 			this.__ctx.strokeStyle = strokeCoordRgb;
 			this.__ctx.fillStyle = fillCoordRgb;
 			for (var i = 0; i < this.options.areas[area].coords.length; i+=2) {
@@ -283,6 +314,10 @@
 				this.__ctx.fillRect(this.options.areas[area].coords[i]-r, this.options.areas[area].coords[i+1]-r, 2*r, 2*r);
 			}
 
+			//Draw labels
+			this.__ctx.font = this.options.labelFont;
+			this.__ctx.fillStyle = getRgbStrExpr(this.options.labelColor);
+			this.__ctx.fillText(this.options.label,this.__boundaryArea[0],this.__boundaryArea[1]);
 		},
 
 		__fixActiveAreaIndex: function(){
@@ -597,6 +632,15 @@
 			}
 		}
 	});
+
+	var findClosestCoord = function(coordSet,x,y,active='') {
+		for (var i = 0; i < coordSet.length; i+=2) {
+			dis = Math.sqrt(Math.pow(x - coordSet[i], 2) + Math.pow(y - coordSet[i+1], 2));
+			if ( dis < 10 && i !== active )
+				return i;
+		}
+		return false;
+	}			
 
 	var dotLineLength = function(x, y, x0, y0, x1, y1, o) {
 		function lineLength(x, y, x0, y0){

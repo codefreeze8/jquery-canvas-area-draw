@@ -71,7 +71,7 @@
 				htmlcode += '\t<area shape="poly" coords="'+areas[i].coords+'" href="'+encodeURI(areas[i].href)+'">\n';
 			}
 			htmlcode = htmlcode += '</map>';
-			$("#"+elname).text(htmlcode);
+			$("#"+elname+"_html").text(htmlcode);
 		};
 
 		function bindButtons( htmlmap,elname ){
@@ -140,6 +140,7 @@
     			var htmlmap1 = $("#demo2_htmlimagemap").htmlimagemap({
         			imageUrl: "http://farm8.staticflickr.com/7259/6956772778_2fa755a228.jpg",
 					areas: demo2_areas,
+					label: "Demo2",
 					activeColor: '#ff9911',
 					fillOpacity: '0.6',
 					lineWidth: 4,
@@ -154,7 +155,8 @@
 
     			var htmlmap2 = $("#demo3_htmlimagemap").htmlimagemap({
         			imageUrl: "http://farm6.staticflickr.com/5010/5295769404_1a221cbb5e_z.jpg",
-        			areas: demo3_areas,
+					areas: demo3_areas,
+					label: "Demo3 Big Label",
         			onMove: function(area){
         			},
         			onUpdateArea: function(area){
