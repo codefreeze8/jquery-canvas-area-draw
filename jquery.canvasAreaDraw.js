@@ -633,7 +633,7 @@
 		}
 	});
 
-	var findClosestCoord = function(coordSet,x,y,active='') {
+	var findClosestCoord = function(coordSet,x,y,active) {
 		for (var i = 0; i < coordSet.length; i+=2) {
 			dis = Math.sqrt(Math.pow(x - coordSet[i], 2) + Math.pow(y - coordSet[i+1], 2));
 			if ( dis < 10 && i !== active )
